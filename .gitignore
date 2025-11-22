@@ -1,7 +1,7 @@
 .venv/
 .pylintrc
 __pycache__
-
+menu_app/migrations
 .vscode
 .idea
 .env
