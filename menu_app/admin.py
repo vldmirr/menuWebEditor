@@ -1,13 +1,18 @@
+# menu_app/admin.py
 from django.contrib import admin
-from .models import MenuItem
+from .models import Menu, MenuItem
 
+class MenuItemInline(admin.TabularInline):
+    model = MenuItem
+    extra = 0
+    fields = ('title', 'url', 'named_url', 'parent')
 
+@admin.register(Menu)
+class MenuAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+    inlines = [MenuItemInline]
+
+@admin.register(MenuItem)
 class MenuItemAdmin(admin.ModelAdmin):
-    list_display = ('name', 'menu_name', 'parent', 'order')
-    list_filter = ('menu_name',)
-    search_fields = ('name', 'menu_name')
-    fields = ('name', 'menu_name', 'named_url', 'explicit_url', 'parent', 'order')
-    ordering = ('menu_name', 'order', 'name')
-
-
-admin.site.register(MenuItem, MenuItemAdmin)
+    list_display = ('title', 'menu', 'parent', 'url', 'named_url')
+    list_filter = ('menu',)
