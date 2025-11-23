@@ -1,54 +1,46 @@
 from django.db import models
-from django.urls import reverse, NoReverseMatch
-from django.utils.translation import gettext_lazy as _
+from django.urls import reverse
+from django.core.exceptions import ValidationError
 
-
-class MenuItem(models.Model):
-    name = models.CharField(_('name'), max_length=100)
-    named_url = models.CharField(
-        _('named URL'), 
-        max_length=100, 
-        blank=True, 
-        help_text=_('Named URL from urls.py')
-    )
-    explicit_url = models.CharField(
-        _('explicit URL'), 
-        max_length=200, 
-        blank=True,
-        help_text=_('Explicit URL (if not using named URL)')
-    )
-    menu_name = models.CharField(
-        _('menu name'), 
-        max_length=50,
-        help_text=_('Unique name for the menu this item belongs to')
-    )
-    parent = models.ForeignKey(
-        'self',
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name='children',
-        verbose_name=_('parent item')
-    )
-    order = models.IntegerField(_('order'), default=0)
+class Menu(models.Model):
+    name = models.CharField(max_length=100, unique=True, verbose_name="Название меню")
 
     class Meta:
-        verbose_name = _('menu item')
-        verbose_name_plural = _('menu items')
-        ordering = ['menu_name', 'order', 'name']
+        verbose_name = "Меню"
+        verbose_name_plural = "Меню"
 
     def __str__(self):
-        return f"{self.menu_name} - {self.name}"
+        return self.name
 
-    def get_url(self):
-        """Get URL for menu item, trying named_url first, then explicit_url"""
+class MenuItem(models.Model):
+    menu = models.ForeignKey(Menu, related_name='items', on_delete=models.CASCADE, verbose_name="Меню")
+    parent = models.ForeignKey('self', null=True, blank=True, related_name='children', on_delete=models.CASCADE, verbose_name="Родительский пункт")
+    title = models.CharField(max_length=100, verbose_name="Заголовок")
+    url = models.CharField(max_length=255, blank=True, null=True, verbose_name="URL или named URL")
+    named_url = models.CharField(max_length=100, blank=True, null=True, verbose_name="Named URL (если есть)")
+
+    class Meta:
+        verbose_name = "Пункт меню"
+        verbose_name_plural = "Пункты меню"
+
+    def __str__(self):
+        return self.title
+
+    def get_absolute_url(self):
         if self.named_url:
             try:
                 return reverse(self.named_url)
-            except NoReverseMatch:
-                return self.explicit_url or '#'
-        return self.explicit_url or '#'
-
-    @property
-    def has_children(self):
-        return self.children.exists()
+            except:
+                pass
+        return self.url if self.url else '#'
+    
+    def clean(self):
+        # Проверка на то, что пункт не может быть своим собственным родителем
+        if self.parent and self.parent.pk == self.pk:
+            raise ValidationError("Пункт меню не может быть своим собственным родителем.")
+        # Проверка на циклические зависимости (простая рекурсия, можно улучшить для глубоких деревьев)
+        parent = self.parent
+        while parent:
+            if parent.pk == self.pk:
+                raise ValidationError("Обнаружена циклическая зависимость в родителях.")
+            parent = parent.parent  
