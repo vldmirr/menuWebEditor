@@ -46,10 +46,7 @@ class MenuItem(models.Model):
 
     @property
     def level(self):
-        """
-        Записывает уровень текущего элемента
-        в иерархии данной модели.
-        """
+   
         def has_parent(item, level=0):
             if item.parent:
                 level += 1
