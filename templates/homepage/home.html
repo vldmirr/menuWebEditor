@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load menu_tags %}
+{% load static %}
+{% block title %}
+  Main page
+{% endblock %}
+{% block content %}
+<div class="flex-shrink-0 p-3" style="width: 280px;">
+  {% draw_menu 'Country Menu' %}
+</div>
+<div class="b-example-divider b-example-vr"></div>
+<div class="flex-shrink-0 p-3" style="width: 280px;">
+  {% draw_menu 'Most popular cars of the 1970s' %}
+</div>
+<div class="b-example-divider b-example-vr"></div>
+{% endblock %}
