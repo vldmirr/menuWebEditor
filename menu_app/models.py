@@ -1,46 +1,69 @@
 from django.db import models
-from django.urls import reverse
-from django.core.exceptions import ValidationError
+from django.db.models import UniqueConstraint
+
 
 class Menu(models.Model):
-    name = models.CharField(max_length=100, unique=True, verbose_name="Название меню")
-
-    class Meta:
-        verbose_name = "Меню"
-        verbose_name_plural = "Меню"
+    name = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
-        return self.name
+        return str(self.name)
+
+    class Meta:
+        verbose_name = 'Меню'
+        verbose_name_plural = 'Меню'
+
 
 class MenuItem(models.Model):
-    menu = models.ForeignKey(Menu, related_name='items', on_delete=models.CASCADE, verbose_name="Меню")
-    parent = models.ForeignKey('self', null=True, blank=True, related_name='children', on_delete=models.CASCADE, verbose_name="Родительский пункт")
-    title = models.CharField(max_length=100, verbose_name="Заголовок")
-    url = models.CharField(max_length=255, blank=True, null=True, verbose_name="URL или named URL")
-    named_url = models.CharField(max_length=100, blank=True, null=True, verbose_name="Named URL (если есть)")
-
-    class Meta:
-        verbose_name = "Пункт меню"
-        verbose_name_plural = "Пункты меню"
+    menu = models.ForeignKey(
+        Menu,
+        on_delete=models.CASCADE,
+        related_name='menuitems'
+    )
+    name = models.CharField('Наименование', max_length=500, unique=True)
+    slug = models.SlugField('Слаг', max_length=100)
+    position = models.PositiveIntegerField('Позиция', default=1)
+    parent = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='children'
+    )
 
     def __str__(self):
-        return self.title
+        return str(self.name)
 
-    def get_absolute_url(self):
-        if self.named_url:
-            try:
-                return reverse(self.named_url)
-            except:
-                pass
-        return self.url if self.url else '#'
-    
-    def clean(self):
-        # Проверка на то, что пункт не может быть своим собственным родителем
-        if self.parent and self.parent.pk == self.pk:
-            raise ValidationError("Пункт меню не может быть своим собственным родителем.")
-        # Проверка на циклические зависимости (простая рекурсия, можно улучшить для глубоких деревьев)
-        parent = self.parent
-        while parent:
-            if parent.pk == self.pk:
-                raise ValidationError("Обнаружена циклическая зависимость в родителях.")
-            parent = parent.parent  
+    @property
+    def url(self):
+        def has_parent(item, url=''):
+            if item.parent is None:
+                url = item.slug + '/' + url
+            else:
+                url = item.slug + '/' + url
+                url = has_parent(item=item.parent, url=url)
+            return url
+        return has_parent(item=self)
+
+    @property
+    def level(self):
+        """
+        Записывает уровень текущего элемента
+        в иерархии данной модели.
+        """
+        def has_parent(item, level=0):
+            if item.parent:
+                level += 1
+                level = has_parent(item=item.parent, level=level)
+            return level
+
+        return has_parent(self)
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(
+                fields=['menu', 'name'], name='unique_menu_item'
+            ),
+        ]
+        verbose_name = 'Пункт меню'
+        verbose_name_plural = 'Пункты меню'
+        ordering = ('position',)
