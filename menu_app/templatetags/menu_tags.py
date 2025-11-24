@@ -5,15 +5,12 @@ from menu_app.models import MenuItem
 register = template.Library()
 
 
-@register.inclusion_tag('templatetags/menu.html', takes_context=True)
+@register.inclusion_tag('menu_app/templatetags/menu.html', takes_context=True)
 def draw_menu(context, menu_name):
     menu_items = MenuItem.objects.filter(menu__name=menu_name)
 
     def subitems_generator(menu_item, menu: str):
-        """
-        Проверяет, есть ли в переданном пункте меню дочерние пункты
-        и возвращает часть html кода с подпунктами переданного пункта.
-        """
+       
         details = '<details>'
         link_class = 'btn btn-primary'
         current_url = context.request.path
@@ -55,10 +52,7 @@ def draw_menu(context, menu_name):
         return menu
 
     def children_items(items):
-        """
-        Генерирует списки с подсписками
-        до тех пор, пока есть дочерние пункты меню.
-        """
+        
         menu_item_code = str()
         for menu_item in items.children.all():
             menu_item_code = subitems_generator(menu_item, menu=menu_item_code)
