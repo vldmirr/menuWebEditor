@@ -1,4 +1,4 @@
-# menuEditor
+# menuWebEditor
 Прорисовка меню осуществляется с помощью тега. Вставить новое меню можно непосредственно в html шаблон  
 `{% draw_menu 'World Cuisines' %}`
 
