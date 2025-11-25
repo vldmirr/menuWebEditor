@@ -4,7 +4,7 @@
 
 ## Установка и настройка:
 
-### Настройка виртуально среды и зависимостей:
+### Настройка виртуальной среды и зависимостей:
 ```bash
 python -m venv venv
 source venv/Scripts/activate.ps1
@@ -22,7 +22,7 @@ python manage.py migrate
 python manage.py loaddata data/db.json
 ```
 
-### Создание суперпользователя и запуск сервера 
+### Создание суперпользователя и запуск сервера: 
 ```bash
 python manage.py createsuperuser
 python manage.py runserver
